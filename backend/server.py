@@ -4,7 +4,7 @@ from dotenv import load_dotenv
 import requests
 import os
 
-from routes.llm_response import route as llm_route
+from .routes.llm_response import route as llm_route
 
 
 load_dotenv()

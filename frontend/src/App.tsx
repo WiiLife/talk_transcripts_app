@@ -1,5 +1,4 @@
 import './App.css'
-import './pages/home_page'
 import HomePage from './pages/home_page'
 
 function App() {

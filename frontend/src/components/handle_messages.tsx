@@ -12,12 +12,14 @@ interface HandleMessagesProps {
   streamedResponse: string;
   userMessage: string;
   streaming: boolean;
+  messageCounter: number;
 }
 
 export const HandleMessages: React.FC<HandleMessagesProps> = ({
   streamedResponse,
   userMessage,
   streaming,
+  messageCounter,
 }) => {
   const [conversation, setConversation] = useState<Message[]>([]);
   const [displayStream, setDisplayStream] = useState("");
@@ -31,7 +33,7 @@ export const HandleMessages: React.FC<HandleMessagesProps> = ({
         { type: "user", content: userMessage },
       ]);
     }
-  }, [userMessage]);
+  }, [userMessage, messageCounter]);
 
   useEffect(() => {
     if (prevStreamingState.current === true && streaming === false) {
@@ -47,8 +49,10 @@ export const HandleMessages: React.FC<HandleMessagesProps> = ({
   useEffect(() => {
     if (streaming && streamedResponse !== prevStreamedResponseRef.current) {
       setDisplayStream(streamedResponse);
-      prevStreamedResponseRef.current = streamedResponse;
     }
+
+    prevStreamingState.current = streaming;
+    prevStreamedResponseRef.current = streamedResponse;
 
     if (!streaming) {
       setDisplayStream("");
@@ -64,56 +68,65 @@ export const HandleMessages: React.FC<HandleMessagesProps> = ({
                 <div key={index} className={`flex ${item.type === "user" ? "justify-end ml-12" : "justify-start mr-12"}`}>
                   <div className={`message-bubble ${item.type === "user" ? "bg-gray-400" : "bg-gray-200"} p-2 mt-10 rounded-lg break-words whitespace-normal`}>
                     <div className="break-words whitespace-pre-wrap">
-                      <ReactMarkdown
-                        remarkPlugins={[remarkGfm]}
-                        components={{
-                          table: ({ children }) => (
-                            <div className="overflow-x-auto w-full my-4">
-                              <table className="min-w-full border-collapse border border-gray-300 text-sm">
-                                {children}
-                              </table>
-                            </div>
-                          ),
-                          thead: ({ children }) => (
-                            <thead className="bg-gray-50">
-                              {children}
-                            </thead>
-                          ),
-                          tbody: ({ children }) => (
-                            <tbody className="divide-y divide-gray-200">
-                              {children}
-                            </tbody>
-                          ),
-                          tr: ({ children }) => (
-                            <tr className="hover:bg-gray-50">
-                              {children}
-                            </tr>
-                          ),
-                          th: ({ children }) => (
-                            <th className="border border-gray-300 px-3 py-2 text-left font-semibold text-gray-900 break-words whitespace-pre-wrap">
-                              {children}
-                            </th>
-                          ),
-                          td: ({ children }) => (
-                            <td className="border border-gray-300 px-3 py-2 text-gray-700 break-words whitespace-pre-wrap">
-                              {children}
-                            </td>
-                          ),
-                          pre: ({ children }) => (
-                            <pre className="overflow-x-auto whitespace-pre-wrap break-words bg-gray-100 p-2 rounded my-2">{children}</pre>
-                          ),
-                          code: ({ children }) => (
-                            <code className="bg-gray-100 px-1 py-0.5 rounded text-sm break-words whitespace-pre-wrap">{children}</code>
-                          ),
-                          p: ({ children }) => <p className="break-words whitespace-pre-wrap mb-2">{children}</p>,
-                          li: ({ children }) => <li className="break-words whitespace-pre-wrap mb-1">{children}</li>,
-                          h1: ({ children }) => <h1 className="text-xl font-bold mb-2 break-words whitespace-pre-wrap">{children}</h1>,
-                          h2: ({ children }) => <h2 className="text-lg font-semibold mb-2 break-words whitespace-pre-wrap">{children}</h2>,
-                          h3: ({ children }) => <h3 className="text-base font-medium mb-2 break-words whitespace-pre-wrap">{children}</h3>,
-                        }}
-                      >    
-                        {item.content}
-                      </ReactMarkdown>
+                      {(() => {
+                        try {
+                          return (
+                            <ReactMarkdown
+                              remarkPlugins={[remarkGfm]}
+                              components={{
+                                table: ({ children }) => (
+                                  <div className="overflow-x-auto w-full my-4">
+                                    <table className="min-w-full border-collapse border border-gray-300 text-sm">
+                                      {children}
+                                    </table>
+                                  </div>
+                                ),
+                                thead: ({ children }) => (
+                                  <thead className="bg-gray-50">
+                                    {children}
+                                  </thead>
+                                ),
+                                tbody: ({ children }) => (
+                                  <tbody className="divide-y divide-gray-200">
+                                    {children}
+                                  </tbody>
+                                ),
+                                tr: ({ children }) => (
+                                  <tr className="hover:bg-gray-50">
+                                    {children}
+                                  </tr>
+                                ),
+                                th: ({ children }) => (
+                                  <th className="border border-gray-300 px-3 py-2 text-left font-semibold text-gray-900 break-words whitespace-pre-wrap">
+                                    {children}
+                                  </th>
+                                ),
+                                td: ({ children }) => (
+                                  <td className="border border-gray-300 px-3 py-2 text-gray-700 break-words whitespace-pre-wrap">
+                                    {children}
+                                  </td>
+                                ),
+                                pre: ({ children }) => (
+                                  <pre className="overflow-x-auto whitespace-pre-wrap break-words bg-gray-100 p-2 rounded my-2">{children}</pre>
+                                ),
+                                code: ({ children }) => (
+                                  <code className="bg-gray-100 px-1 py-0.5 rounded text-sm break-words whitespace-pre-wrap">{children}</code>
+                                ),
+                                p: ({ children }) => <p className="break-words whitespace-pre-wrap mb-2">{children}</p>,
+                                li: ({ children }) => <li className="break-words whitespace-pre-wrap mb-1">{children}</li>,
+                                h1: ({ children }) => <h1 className="text-xl font-bold mb-2 break-words whitespace-pre-wrap">{children}</h1>,
+                                h2: ({ children }) => <h2 className="text-lg font-semibold mb-2 break-words whitespace-pre-wrap">{children}</h2>,
+                                h3: ({ children }) => <h3 className="text-base font-medium mb-2 break-words whitespace-pre-wrap">{children}</h3>,
+                              }}
+                            >    
+                              {item.content}
+                            </ReactMarkdown>
+                          );
+                        } catch (error) {
+                          console.error('ReactMarkdown error:', error);
+                          return <pre className="whitespace-pre-wrap break-words">{item.content}</pre>;
+                        }
+                      })()}
                     </div>
                   </div>
                 </div>
@@ -125,56 +138,65 @@ export const HandleMessages: React.FC<HandleMessagesProps> = ({
               <div className="flex justify-start mr-12">
                 <div className="message-bubble bg-gray-200 p-2 mt-10 rounded-lg break-words whitespace-normal">
                 <div className="break-words whitespace-pre-wrap">
-                      <ReactMarkdown
-                        remarkPlugins={[remarkGfm]}
-                        components={{
-                          table: ({ children }) => (
-                            <div className="overflow-x-auto w-full my-4">
-                              <table className="min-w-full border-collapse border border-gray-300 text-sm">
-                                {children}
-                              </table>
-                            </div>
-                          ),
-                          thead: ({ children }) => (
-                            <thead className="bg-gray-50">
-                              {children}
-                            </thead>
-                          ),
-                          tbody: ({ children }) => (
-                            <tbody className="divide-y divide-gray-200">
-                              {children}
-                            </tbody>
-                          ),
-                          tr: ({ children }) => (
-                            <tr className="hover:bg-gray-50">
-                              {children}
-                            </tr>
-                          ),
-                          th: ({ children }) => (
-                            <th className="border border-gray-300 px-3 py-2 text-left font-semibold text-gray-900 break-words whitespace-pre-wrap">
-                              {children}
-                            </th>
-                          ),
-                          td: ({ children }) => (
-                            <td className="border border-gray-300 px-3 py-2 text-gray-700 break-words whitespace-pre-wrap">
-                              {children}
-                            </td>
-                          ),
-                          pre: ({ children }) => (
-                            <pre className="overflow-x-auto whitespace-pre-wrap break-words bg-gray-100 p-2 rounded my-2">{children}</pre>
-                          ),
-                          code: ({ children }) => (
-                            <code className="bg-gray-100 px-1 py-0.5 rounded text-sm break-words whitespace-pre-wrap">{children}</code>
-                          ),
-                          p: ({ children }) => <p className="break-words whitespace-pre-wrap mb-2">{children}</p>,
-                          li: ({ children }) => <li className="break-words whitespace-pre-wrap mb-1">{children}</li>,
-                          h1: ({ children }) => <h1 className="text-xl font-bold mb-2 break-words whitespace-pre-wrap">{children}</h1>,
-                          h2: ({ children }) => <h2 className="text-lg font-semibold mb-2 break-words whitespace-pre-wrap">{children}</h2>,
-                          h3: ({ children }) => <h3 className="text-base font-medium mb-2 break-words whitespace-pre-wrap">{children}</h3>,
-                        }}
-                      >    
-                        {displayStream}
-                      </ReactMarkdown>
+                      {(() => {
+                        try {
+                          return (
+                            <ReactMarkdown
+                              remarkPlugins={[remarkGfm]}
+                              components={{
+                                table: ({ children }) => (
+                                  <div className="overflow-x-auto w-full my-4">
+                                    <table className="min-w-full border-collapse border border-gray-300 text-sm">
+                                      {children}
+                                    </table>
+                                  </div>
+                                ),
+                                thead: ({ children }) => (
+                                  <thead className="bg-gray-50">
+                                    {children}
+                                  </thead>
+                                ),
+                                tbody: ({ children }) => (
+                                  <tbody className="divide-y divide-gray-200">
+                                    {children}
+                                  </tbody>
+                                ),
+                                tr: ({ children }) => (
+                                  <tr className="hover:bg-gray-50">
+                                    {children}
+                                  </tr>
+                                ),
+                                th: ({ children }) => (
+                                  <th className="border border-gray-300 px-3 py-2 text-left font-semibold text-gray-900 break-words whitespace-pre-wrap">
+                                    {children}
+                                  </th>
+                                ),
+                                td: ({ children }) => (
+                                  <td className="border border-gray-300 px-3 py-2 text-gray-700 break-words whitespace-pre-wrap">
+                                    {children}
+                                  </td>
+                                ),
+                                pre: ({ children }) => (
+                                  <pre className="overflow-x-auto whitespace-pre-wrap break-words bg-gray-100 p-2 rounded my-2">{children}</pre>
+                                ),
+                                code: ({ children }) => (
+                                  <code className="bg-gray-100 px-1 py-0.5 rounded text-sm break-words whitespace-pre-wrap">{children}</code>
+                                ),
+                                p: ({ children }) => <p className="break-words whitespace-pre-wrap mb-2">{children}</p>,
+                                li: ({ children }) => <li className="break-words whitespace-pre-wrap mb-1">{children}</li>,
+                                h1: ({ children }) => <h1 className="text-xl font-bold mb-2 break-words whitespace-pre-wrap">{children}</h1>,
+                                h2: ({ children }) => <h2 className="text-lg font-semibold mb-2 break-words whitespace-pre-wrap">{children}</h2>,
+                                h3: ({ children }) => <h3 className="text-base font-medium mb-2 break-words whitespace-pre-wrap">{children}</h3>,
+                              }}
+                            >    
+                              {displayStream}
+                            </ReactMarkdown>
+                          );
+                        } catch (error) {
+                          console.error('ReactMarkdown streaming error:', error);
+                          return <pre className="whitespace-pre-wrap break-words">{displayStream}</pre>;
+                        }
+                      })()}
                     </div>
                 </div>
               </div>

@@ -6,7 +6,9 @@ import os
 import httpx
 
 
-load_dotenv()
+dotenv_path = os.path.join(os.path.dirname(__file__), '..', '.env')
+load_dotenv(dotenv_path)
+
 LLM_URL = os.environ.get("LLM_URL", "https://openrouter.ai/api/v1/chat/completions")
 LLM_SERVICE_API_KEY = os.environ.get("LLM_SERVICE_API_KEY", None)
 
@@ -75,12 +77,17 @@ async def get_chat_completions(request: Request):
 
 @route.get("/chat/completions-test")
 async def test_chat_completions():
-    headers = {"Authorization": f"Bearer {LLM_SERVICE_API_KEY}"}
+    headers = {
+        "Authorization": f"Bearer {LLM_SERVICE_API_KEY}",
+        "Content-Type": "application/json"
+        }
     payload = {
         "model": "mistralai/mistral-7b-instruct:free",
         "messages": [{"role": "user", "content": "ping"}],
         "stream": False
     }
+    
+    return LLM_SERVICE_API_KEY
     
     async with httpx.AsyncClient() as client:
         response = await client.post(LLM_URL, headers=headers, json=payload)

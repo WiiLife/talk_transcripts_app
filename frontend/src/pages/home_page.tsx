@@ -22,9 +22,10 @@ import {
 import { HandleMessages } from "@/components/handle_messages"
 import { outputFormat } from "@/assets/outputFormat.ts"
 
-const backend_url: string = import.meta.env.VITE_BACKEND_URL   
-const default_model: string = import.meta.env.VITE_DEFAULT_LLM_MODEL
-const maxRetries: number = import.meta.env.VITE_MAX_REQUEST_RETRIES
+const backend_url: string = import.meta.env.VITE_BACKEND_URL || "localhost:8000"
+const default_model: string = import.meta.env.VITE_DEFAULT_LLM_MODEL || "meta-llama/llama-3.3-8b-instruct:free"
+const default_model_name: string = import.meta.env.VITE_DEFAULT_LLM_MODEL_NAME || "Llama 3.3 8B Instruct"
+const maxRetries: number = import.meta.env.VITE_MAX_REQUEST_RETRIES || 3
 
 const HomePage = () => {
   const [selectedModel, setSelectedModel] = useState<string>("")
@@ -35,6 +36,7 @@ const HomePage = () => {
   const [streaming, setStreaming] = useState<boolean>(false)
   const [requestLoading, setRequestLoading] = useState<boolean>(false)
   const [firstSend, setFirstSend] = useState<boolean>(true)
+  const [messageCounter, setMessageCounter] = useState<number>(0)
 
   const abortControllerRef = useRef<AbortController | null>(null);
   const chatAreaRef = useRef<HTMLDivElement | null>(null);
@@ -60,7 +62,9 @@ const HomePage = () => {
   const HandleRequest = async () => {
     abortControllerRef.current = new AbortController();
     setUserMessage(textAreaValue)
+    setMessageCounter(prev => prev + 1)
     setTextAreaValue("")
+    setLLMResponse("")
     setFirstSend(false)
 
     for (let attempt = 0; attempt < maxRetries; attempt++) {
@@ -166,7 +170,7 @@ const HomePage = () => {
   return (
     <div className="flex flex-col h-screen overflow-hidden bg-background text-foreground">
       {/* Navigation */}
-      <div className="flex justify-center border-b">
+      <div className="flex justify-center border-b relative z-50">
         <NavigationMenu viewport={false} className="hidden md:block">
           <NavigationMenuList className="m-2">
             <NavigationMenuItem>
@@ -191,6 +195,7 @@ const HomePage = () => {
           streamedResponse={llmResponse}
           userMessage={userMessage}
           streaming={streaming}
+          messageCounter={messageCounter}
         />
       </div>
 
@@ -200,7 +205,7 @@ const HomePage = () => {
           <CardContent className="flex justify-between gap-2">
             <Select value={selectedModel} onValueChange={setSelectedModel}>
               <SelectTrigger>
-                <SelectValue placeholder="choose model" />
+                <SelectValue placeholder={firstSend ? "choose model" : default_model_name} />
               </SelectTrigger>
               <SelectContent>
                 <SelectGroup>
@@ -228,6 +233,14 @@ const HomePage = () => {
               onChange={ExpandTextArea}
               value={textAreaValue}
               rows={1}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                  e.preventDefault();
+                  if (textAreaValue.trim() && !requestLoading) {
+                    HandleRequest();
+                  }
+                }
+              }}
             ></textarea>
           </CardContent>
         </Card>
