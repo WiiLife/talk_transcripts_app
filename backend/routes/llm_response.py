@@ -87,7 +87,7 @@ async def test_chat_completions():
         "stream": False
     }
     
-    return LLM_SERVICE_API_KEY
+    # return LLM_SERVICE_API_KEY
     
     async with httpx.AsyncClient() as client:
         response = await client.post(LLM_URL, headers=headers, json=payload)
