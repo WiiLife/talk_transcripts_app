@@ -8,3 +8,15 @@ class SuccessfulMessage(BaseModel):
     detail: str
     timestamp: datetime = datetime.utcnow()
     payload: Optional[dict] = None
+    
+class UnsuccessfulResponse(BaseModel):
+    status_code: int
+    detail: str
+    timestamp: datetime = datetime.utcnow()
+    payload: Optional[dict] = None
+    
+class ErrorMessage(BaseModel):
+    status_code: int
+    details: str
+    timestamp: datetime = datetime.utcnow()
+    payload: Optional[dict] = None

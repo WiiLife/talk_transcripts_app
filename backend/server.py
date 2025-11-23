@@ -8,8 +8,7 @@ import logging
 import os
 
 from .routes.llm_response import route as llm_route
-from .routes.vdb import route as vector_db_route
-from .routes.utils.pdf_processing import get_model
+from .routes.file_upload import route as vector_db_route
 
 
 logging.basicConfig(level=logging.INFO)
@@ -51,32 +50,7 @@ def get_health():
     return {
         "message": "backend running",
         "llm_endpoint": "running" if bool(response) else "not running"
-            }
-    
-@app.on_event("startup")
-def start_vector_db():
-    logger.info("creating vector db")
-    existing_collections = client.get_collections().collections
-    existing_collection_names = [c.name for c in existing_collections]
-    
-    model = get_model()
-    
-    if not model:
-        raise HTTPException(status_code=500, detail="Embedding model error: vector_size not defined")
-    
-    if VECTOR_DB_COLLECTION_NAME not in existing_collection_names:
-        logger.info("Creating collection with Qdrant ...")
-        client.create_collection(
-            collection_name=VECTOR_DB_COLLECTION_NAME,
-            vectors_config=VectorParams(
-                size=model.get_sentence_embedding_dimension(),  # type: ignore
-                distance=Distance.COSINE
-            )
-        )
-        logger.info(f"Collection {VECTOR_DB_COLLECTION_NAME} created")
-    else:
-        logger.info(f"Collection {VECTOR_DB_COLLECTION_NAME} already exists")        
-
+            }   
 
 app.include_router(llm_route)
 app.include_router(vector_db_route)
