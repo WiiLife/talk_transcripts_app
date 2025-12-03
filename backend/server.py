@@ -1,14 +1,14 @@
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
 from qdrant_client import QdrantClient
-from qdrant_client.http.models import VectorParams, Distance
 import requests
 import logging
+import redis
 import os
 
-from .routes.llm_response import route as llm_route
-from .routes.file_upload import route as vector_db_route
+from backend.routes.llm_response import route as llm_route
+from backend.routes.file_upload import route as vector_db_route
 
 
 logging.basicConfig(level=logging.INFO)
@@ -19,8 +19,12 @@ LLM_URL = os.environ.get("LLM_URL", "https://openrouter.ai/api/v1/chat/completio
 LLM_SERVICE_API_KEY = os.environ.get("LLM_SERVICE_API_KEY", None)
 VECTOR_DB_COLLECTION_NAME = os.environ.get("VECTOR_DB_COLLECTION_NAME", "talks_transcripts")
 # VECTOR_SIZE = int(os.environ.get("VECTOR_SIZE", 768))
+REDIS_HOST = os.environ.get("REDIS_HOST", "localhost")
+QDRANT_HOST = os.environ.get("QDRANT_HOST", "localhost")
 
-client = QdrantClient(url="http://localhost:6333")
+
+client = QdrantClient(url="http://{QDRANT_HOST}:6333")
+redis_client = redis.Redis(host=REDIS_HOST, port=6379, db=0, decode_responses=True)
 
 app = FastAPI(
     title="backend for talks trascript processing", 

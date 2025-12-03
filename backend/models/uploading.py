@@ -4,6 +4,7 @@ from datetime import datetime
 
 class ChunkDataInfo(BaseModel):
     chunk_index: int
+    file_path: str
     timestamp: datetime = datetime.utcnow()
 
 class ChunkedUploadMetadata(BaseModel):
@@ -13,4 +14,5 @@ class ChunkedUploadMetadata(BaseModel):
     total_chunks: int
     content_type: str
     chunk_metadata: list[ChunkDataInfo]
+    retry: int = 0
     timestamp: datetime = datetime.utcnow()

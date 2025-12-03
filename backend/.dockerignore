@@ -1,0 +1,30 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+env/
+venv/
+.venv/
+
+# Node
+node_modules/
+npm-debug.log
+yarn-error.log
+dist/
+build/
+
+# Git
+.git/
+.gitignore
+
+# Logs
+*.log
+
+# OS files
+.DS_Store
+
+# Your app-specific files
+uploads/
+data/
+cache/

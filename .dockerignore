@@ -1,0 +1,40 @@
+./backend
+.vscode
+
+# tests
+Transcripts_English.txt
+Transcripts_English_Partial.txt
+Transcripts_English_Small.txt
+test_document.pdf
+tests
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+env/
+venv/
+.venv/
+
+# Node
+node_modules/
+npm-debug.log
+yarn-error.log
+dist/
+build/
+
+# Git
+.git/
+.gitignore
+
+# Logs
+*.log
+
+# OS files
+.DS_Store
+
+# Your app-specific files
+uploads/
+data/
+cache/
