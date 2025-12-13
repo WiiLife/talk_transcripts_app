@@ -1,10 +1,7 @@
 from typing import List
 
 from fastapi import APIRouter, File, UploadFile, HTTPException, Request
-from qdrant_client import QdrantClient
-from dotenv import load_dotenv
 from pathlib import Path
-import redis.asyncio as redis
 import os
 import uuid
 import logging
@@ -18,28 +15,19 @@ from backend.models.uploading import ChunkedUploadMetadata, ChunkDataInfo
 from qdrant_client.http.models import VectorParams, Distance
 from backend.logging_config import setup_logging
 from backend.CustomHTTPException import CustomHTTPException
+from backend.clients import qdrant_client as client, redis_client
+from backend.config import settings
 
-
-load_dotenv()
 setup_logging()
+
 PROJECT_ROOT = Path(__file__).resolve().parent
-VECTOR_DB_COLLECTION_NAME = os.environ.get("VECTOR_DB_COLLECTION_NAME", "talks_transcripts")
-MAX_FILESIZE = int(os.environ.get("MAX_FILESIZE", 81920000)) # 80MB
-MAX_CHUNK_SIZE = int(os.environ.get("MAX_CHUNK_SIZE", 10485760)) # 10MB
-CHUNK_TTL = int(os.environ.get("CHUNK_TTL", 86400))  # 1 day in seconds
-MAX_RETRIES = int(os.environ.get("MAX_RETRIES", 3))
-MERGING_CHUNK_SIZE = int(os.environ.get("MERGING_CHUNK_SIZE", 5 * 1024 * 1024)) # 5MB when merging chunks in one file
-REDIS_HOST = os.environ.get("REDIS_HOST", "localhost")
-QDRANT_HOST = os.environ.get("QDRANT_HOST", "localhost")
 
 info_log = logging.getLogger("info_logger")
 debug_log = logging.getLogger("debug_logger")
 
 route = APIRouter(prefix="/api", tags=["database_router"])
-redis_client = redis.Redis(host=REDIS_HOST, port=6379, db=0, decode_responses=True) # docker run -p 6379:6379 redis
-client = QdrantClient(url=f"http://{QDRANT_HOST}:6333")  # docker run -p 6333:6333 -v qdrant_storage:/qdrant/storage qdrant/qdrant   
 
-SUPPORTED_FILE_TYPES = [".pdf", ".txt"] 
+SUPPORTED_FILE_TYPES = [".pdf", ".txt"]
 
 upload_locks: dict[str, asyncio.Lock] = {}
 upload_locks_lock = asyncio.Lock()
@@ -166,14 +154,17 @@ async def upload_files(files: List[UploadFile] = File(...)):
             collection_name=collection_name,
             vectors_config=VectorParams(
                 size=dimension,
-                distance=Distance.COSINE
-            )
+                distance=Distance.COSINE,
+            ),
         )
         
-        is_pdf = (f.content_type == 'application/pdf' or 
-                (f.filename and f.filename.lower().endswith('.pdf')))
-        is_txt = (f.content_type == 'text/plain' or 
-                (f.filename and f.filename.lower().endswith('.txt')))
+        is_pdf = (
+            f.content_type == "application/pdf"
+            or (f.filename and f.filename.lower().endswith(".pdf"))
+        )
+        is_txt = (
+            f.content_type == "text/plain" or (f.filename and f.filename.lower().endswith(".txt"))
+        )
         
         if is_txt:
             points = process_txt_file(f.file, f.filename, collection_name)
@@ -194,8 +185,8 @@ async def upload_files(files: List[UploadFile] = File(...)):
         results.append(f"'{f.filename}' -> collection '{collection_name}' ({len(points)} chunks)")
 
     return SuccessfulMessage(
-        status_code=200, 
-        detail=f"Successfully processed {len(files)} files: {', '.join(results)}"
+        status_code=200,
+        detail=f"Successfully processed {len(files)} files: {', '.join(results)}",
     )
     
 @route.get("/upload/instr")
@@ -204,9 +195,9 @@ async def upload_instructions():
         status_code=200,
         detail="Successfully request chunked upload instructions",
         payload={
-            "max_file_size": MAX_FILESIZE,
-            "max_chunk_size": MAX_CHUNK_SIZE,
-            "chunk_ttl": CHUNK_TTL
+            "max_file_size": settings.MAX_FILESIZE,
+            "max_chunk_size": settings.MAX_CHUNK_SIZE,
+            "chunk_ttl": settings.CHUNK_TTL,
         }
     )
 
@@ -224,38 +215,38 @@ async def upload_init(req: Request):
     chunk_size = data["chunk_size"]
     total_chunks = data["total_chunks"]
     content_type = data["content_type"]
-    
+
     collection_name = Path(file_name).stem
-    
+
     existing_collections = client.get_collections().collections
     if collection_name in [c.name for c in existing_collections]:
         raise HTTPException(status_code=400, detail=f"Collection '{collection_name}' already exists.")
-    
+
     metadata = ChunkedUploadMetadata(
         file_name=file_name,
         file_size=file_size,
         chunk_size=chunk_size,
         total_chunks=total_chunks,
         content_type=content_type,
-        chunk_metadata=[]
+        chunk_metadata=[],
     )
-    
-    if file_size > MAX_FILESIZE:
-        raise HTTPException(status_code=400, detail=f"File size exceeds the limit. {file_size} > {MAX_FILESIZE}")
 
-    if chunk_size > MAX_CHUNK_SIZE:
+    if file_size > settings.MAX_FILESIZE:
+        raise HTTPException(status_code=400, detail=f"File size exceeds the limit. {file_size} > {settings.MAX_FILESIZE}")
+
+    if chunk_size > settings.MAX_CHUNK_SIZE:
         raise HTTPException(status_code=400, detail=f"Chunk size exceeds the limit.")
-    
+
     try:
         session_id = str(uuid.uuid4())
-        await redis_client.set(session_id, metadata.json(), ex=CHUNK_TTL)
+        await redis_client.set(session_id, metadata.json(), ex=settings.CHUNK_TTL)
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Redis Error: {str(e)}")
-    
+
     return SuccessfulMessage(
         status_code=200,
         detail="initation successful",
-        payload={"metadata": metadata.dict(), "redis_uuid": session_id}
+        payload={"metadata": metadata.dict(), "redis_uuid": session_id},
     )
 
 @route.post("/upload/chunk")
@@ -304,7 +295,7 @@ async def process_chunk(req: Request):
             embed_chunks([chunk_data])
 
         try:
-            await redis_client.set(redis_uuid, metadata.json(), ex=CHUNK_TTL)
+            await redis_client.set(redis_uuid, metadata.json(), ex=settings.CHUNK_TTL)
         except Exception as e:
             raise HTTPException(status_code=500, detail=f"Redis Error: {str(e)}")
 
@@ -329,7 +320,7 @@ async def chunking_status(req: Request):
     try: 
         redis_data = await redis_client.get(redis_uuid)
         metadata = ChunkedUploadMetadata.parse_raw(redis_data)
-        
+
         is_complete = len(metadata.chunk_metadata) == metadata.total_chunks
         
     except Exception as e:
@@ -350,15 +341,15 @@ async def complete_upload(req: Request):
     data = await req.json()
     redis_uuid = data["redis_uuid"]
     retries = 0
-    
+
     redis_data = await redis_client.get(redis_uuid)
     if not redis_data:
         raise HTTPException(status_code=404, detail="Upload session not found")
-    
+
     metadata = ChunkedUploadMetadata.parse_raw(redis_data)
-    
+
     while len(metadata.chunk_metadata) != metadata.total_chunks:
-        if retries > MAX_RETRIES:
+        if retries > settings.MAX_RETRIES:
             return HTTPException(status_code=400, detail="all retries failed, data not fully uploaded")
         missing_indexs = scan_for_non_uploaded_chunks(metadata)
         retries += 1
@@ -371,26 +362,24 @@ async def complete_upload(req: Request):
         except Exception as e:
             info_log.info(f"retry: {retries} failed")
             return CustomHTTPException(
-                status_code=400, 
-                detail=f"Error during retry {retries}: {str(e)}", 
-                payload={"missing_indexes": missing_indexs}
+                status_code=400,
+                detail=f"Error during retry {retries}: {str(e)}",
+                payload={"missing_indexes": missing_indexs},
             )
     
-    try:
-        chunks_dir = str(PROJECT_ROOT / "uploads" / f"{Path(metadata.file_name).stem}_{redis_uuid}")
-        ext = metadata.file_name.split('.')[-1]
-        merged_chunks_file_path = merge_chunks(file_extention=ext, chunks_dir=chunks_dir)
-        result = upload_file(merged_chunks_file_path)
-        
-        # consider creating a postgres database for the user data
-        
-        # Cleanup
-        for chunk in metadata.chunk_metadata:
-            os.remove(chunk.file_path)
-        os.remove(merged_chunks_file_path)
-        
-        await redis_client.delete(redis_uuid)
-        
-        return result
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Processing error: {str(e)}")
+        try:
+            chunks_dir = str(PROJECT_ROOT / "uploads" / f"{Path(metadata.file_name).stem}_{redis_uuid}")
+            ext = metadata.file_name.split(".")[-1]
+            merged_chunks_file_path = merge_chunks(file_extention=ext, chunks_dir=chunks_dir)
+            result = upload_file(merged_chunks_file_path)
+
+            # Cleanup
+            for chunk in metadata.chunk_metadata:
+                os.remove(chunk.file_path)
+            os.remove(merged_chunks_file_path)
+
+            await redis_client.delete(redis_uuid)
+
+            return result
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"Processing error: {str(e)}")

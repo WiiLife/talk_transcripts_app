@@ -1,16 +1,9 @@
 from fastapi import APIRouter, Request, HTTPException
 from fastapi.responses import StreamingResponse
-from dotenv import load_dotenv
 import json
-import os 
 import httpx
 
-
-dotenv_path = os.path.join(os.path.dirname(__file__), '..', '.env')
-load_dotenv(dotenv_path)
-
-LLM_URL = os.environ.get("LLM_URL", "https://openrouter.ai/api/v1/chat/completions")
-LLM_SERVICE_API_KEY = os.environ.get("LLM_SERVICE_API_KEY", None)
+from backend.config import settings
 
 route = APIRouter(prefix="/api/v1", tags=["llm_router"])
 
@@ -19,7 +12,7 @@ async def get_chat_completions(request: Request):
     
     data: dict = await request.json()
         
-    headers = {"Authorization": f"Bearer {LLM_SERVICE_API_KEY}"}
+    headers = {"Authorization": f"Bearer {settings.LLM_SERVICE_API_KEY}"}
     payload = {
         "model": data.get("model"), 
         "messages": data.get("messages"), 
@@ -33,7 +26,7 @@ async def get_chat_completions(request: Request):
         
         try:
             async with httpx.AsyncClient(timeout=60.0) as client:
-                async with client.stream("POST", LLM_URL, headers=headers, json=payload) as response:
+                async with client.stream("POST", settings.LLM_URL, headers=headers, json=payload) as response:
                     async for line in response.aiter_lines():
                         line = line.strip()
                         if line.startswith('data: '):
@@ -78,9 +71,9 @@ async def get_chat_completions(request: Request):
 @route.get("/chat/completions-test")
 async def test_chat_completions():
     headers = {
-        "Authorization": f"Bearer {LLM_SERVICE_API_KEY}",
-        "Content-Type": "application/json"
-        }
+        "Authorization": f"Bearer {settings.LLM_SERVICE_API_KEY}",
+        "Content-Type": "application/json",
+    }
     payload = {
         "model": "mistralai/mistral-7b-instruct:free",
         "messages": [{"role": "user", "content": "ping"}],
@@ -90,7 +83,7 @@ async def test_chat_completions():
     # return LLM_SERVICE_API_KEY
     
     async with httpx.AsyncClient() as client:
-        response = await client.post(LLM_URL, headers=headers, json=payload)
+        response = await client.post(settings.LLM_URL, headers=headers, json=payload)
         print(f"Test response status: {response.status_code}")
         print(f"Test response body: {response.text}")
         
