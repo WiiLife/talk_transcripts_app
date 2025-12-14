@@ -19,9 +19,11 @@ class Settings(BaseSettings):
 
     CHUNK_SIZE: int = 800
     OVERLAP: int = 100
+    BATCH_SIZE: int = 32
     SENTENCE_TRANSFORMER_MODEL_NAME: str = "all-MiniLM-L6-v2"
 
     ALLOW_ORIGINS: List[str] = ["http://localhost:5173"]
+    MAX_CONTENT_LENGTH: int = 10 * 1024 * 1024
 
     class Config:
         env_file = ".env"

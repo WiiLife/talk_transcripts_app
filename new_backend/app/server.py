@@ -1,17 +1,11 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from dotenv import load_dotenv
 import requests
 
-from .logging_config import setup_logging
-from .config import settings
-from .clients import qdrant_client, redis_client
-
-from .routes.llm_response import route as llm_route
-from .routes.file_upload import route as vector_db_route
-
-load_dotenv()
-setup_logging()
+from config.config import settings
+from app.routes.llm_chat_route import route as llm_route
+from app.routes.upload_file_route import route as vector_db_route
+from middleware.middleware import MaxContentLengthMiddleware
 
 
 def create_app() -> FastAPI:
@@ -28,6 +22,7 @@ def create_app() -> FastAPI:
         allow_methods=["*"],
         allow_headers=["*"],
     )
+    app.add_middleware(MaxContentLengthMiddleware)
 
     @app.get("/")
     def home():

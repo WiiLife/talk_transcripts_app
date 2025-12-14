@@ -62,7 +62,6 @@ def chunk_text(text, chunk_size=CHUNK_SIZE, overlap=OVERLAP):
 
 
 def embed_chunks(chunks):
-    global vector_size
     logger.info(f"Generating embeddings for {len(chunks)} chunks")
     model = get_model()
     embeddings = model.encode(chunks, batch_size=32, show_progress_bar=True)

@@ -39,7 +39,7 @@ async def get_upload_lock(upload_id: str) -> asyncio.Lock:
             upload_locks[upload_id] = asyncio.Lock()
         return upload_locks[upload_id]
 
-def merge_chunks(file_extention: str, chunks_dir: str, merged_file_name = None, block_size: int = MERGING_CHUNK_SIZE):
+def merge_chunks(file_extention: str, chunks_dir: str, merged_file_name = None, block_size: int = settings.MERGING_CHUNK_SIZE):
     if merged_file_name is None:
         merged_file_name = Path(chunks_dir).name
     debug_log.debug(os.listdir(chunks_dir))
@@ -119,7 +119,7 @@ def scan_for_non_uploaded_chunks(metadata: ChunkedUploadMetadata):
     return missing_chunk_indexs
 
 @route.post("/upload")
-async def upload_files(files: List[UploadFile] = File(...)):
+async def upload_files(files: List[UploadFile]):
     """
     Upload files and create separate collections for each based on filename
     Collection name will be the filename (without .pdf extension)

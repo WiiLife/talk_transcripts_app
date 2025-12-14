@@ -4,7 +4,7 @@ from datetime import datetime
 
 
 class SuccessfulMessage(BaseModel):
-    status_code: int
+    status_code: int = 200
     detail: str
     timestamp: datetime = datetime.utcnow()
     payload: Optional[dict] = None
