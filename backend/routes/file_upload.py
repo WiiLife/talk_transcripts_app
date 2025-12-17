@@ -256,7 +256,6 @@ async def process_chunk(req: Request):
     chunk_data = data["chunk_data"]
     chunk_index = data["chunk_index"]
     redis_uuid = data["redis_uuid"]
-    embed: bool = data["embed_chunk"]
 
     # Get lock *for this specific upload UUID*
     upload_lock = await get_upload_lock(redis_uuid)
@@ -290,9 +289,6 @@ async def process_chunk(req: Request):
         metadata.chunk_metadata.append(
             ChunkDataInfo(chunk_index=chunk_index, file_path=str(chunk_path))
         )
-        
-        if embed:
-            embed_chunks([chunk_data])
 
         try:
             await redis_client.set(redis_uuid, metadata.json(), ex=settings.CHUNK_TTL)
