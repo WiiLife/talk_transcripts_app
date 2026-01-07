@@ -1,0 +1,110 @@
+# ========================================
+# OS / Editor files
+# ========================================
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+
+Thumbs.db
+ehthumbs.db
+
+*.swp
+*.swo
+*.swn
+*.bak
+*.tmp
+
+.vscode/
+.idea/
+*.iml
+
+# ========================================
+# Environment variables & secrets
+# ========================================
+.env
+.env.*
+!.env.example
+*.key
+*.pem
+*.crt
+secrets/
+credentials/
+
+# ========================================
+# Logs
+# ========================================
+logs/
+*.log
+
+# ========================================
+# Python
+# ========================================
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+
+.venv/
+venv/
+env/
+ENV/
+
+pip-wheel-metadata/
+*.egg-info/
+.eggs/
+
+# Pytest / coverage
+.pytest_cache/
+.coverage
+.coverage.*
+htmlcov/
+
+# ========================================
+# Node / Frontend
+# ========================================
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+dist/
+build/
+.next/
+.out/
+
+# ========================================
+# Docker
+# ========================================
+*.pid
+docker-compose.override.yml
+
+# ========================================
+# Databases
+# ========================================
+*.sqlite
+*.sqlite3
+*.db
+*.dump
+
+# ========================================
+# Temporary / Generated files
+# ========================================
+tmp/
+temp/
+.cache/
+.cache-*
+*.lock
+
+# ========================================
+# Jupyter
+# ========================================
+.ipynb_checkpoints/
+
+# ========================================
+# Misc
+# ========================================
+*.orig
+*.rej
