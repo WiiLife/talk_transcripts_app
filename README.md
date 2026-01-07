@@ -59,7 +59,3 @@ Core subsystems
 ## Contributing
 
 Contributions are welcome. Preferred areas: pipeline reliability, vector store integrations, improved UI/UX, and test coverage. Open an issue or PR to start a discussion.
-
-## License
-
-Include your preferred license here.
